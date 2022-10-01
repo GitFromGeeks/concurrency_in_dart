@@ -10,12 +10,26 @@ extension Log on Object {
 const url =
     "https://55hogzih3c.execute-api.ap-south-1.amazonaws.com/dev/api/quizes";
 
-Future<Iterable<Quiz>> parseJson(String uri) => HttpClient()
-    .getUrl(Uri.parse(uri))
-    .then((req) => req.close())
-    .then((res) => res.transform(const Utf8Decoder()).join())
-    .then((str) => json.decode(str) as List<dynamic>)
-    .then((json) => json.map((e) => Quiz.fromJson(e)));
+mixin APICalls<T> {
+  Future<Iterable<T>> getCall(String url) => HttpClient()
+      .getUrl(Uri.parse(url))
+      .then((req) => req.close())
+      .then((res) => res.transform(const Utf8Decoder()).join())
+      .then((str) => json.decode(str) as List<dynamic>)
+      .then((list) => list.cast());
+}
+
+class GetQuizs with APICalls<Map<String, dynamic>> {
+  Future<Iterable<Quiz>> getQuizs(String url) =>
+      getCall(url).then((jsons) => jsons.map((e) => Quiz.fromJson(e)));
+}
+
+// Future<Iterable<Quiz>> parseJson(String uri) => HttpClient()
+//     .getUrl(Uri.parse(uri))
+//     .then((req) => req.close())
+//     .then((res) => res.transform(const Utf8Decoder()).join())
+//     .then((str) => json.decode(str) as List<dynamic>)
+//     .then((json) => json.map((e) => Quiz.fromJson(e)));
 
 // Recommended to catch error at every  api level like this instead of list of api
 extension EmptyOnErrorOnFuture<E> on Future<Iterable<E>> {
@@ -31,8 +45,8 @@ extension EmptyOnError<E> on Future<List<Iterable<E>>> {
 
 void testit() async {
   final quizs = await Future.wait([
-    parseJson(url).emptyOnErrorOnFuture(),
-    parseJson(url).emptyOnErrorOnFuture(),
+    GetQuizs().getQuizs(url).emptyOnErrorOnFuture(),
+    GetQuizs().getQuizs(url).emptyOnErrorOnFuture(),
   ]);
   quizs.log();
 }
